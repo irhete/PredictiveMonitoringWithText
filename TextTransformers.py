@@ -35,7 +35,7 @@ class LDATransformer(TransformerMixin):
         
 
         
-    def fit(self, X):
+    def fit(self, X, y=None):
         if self.dict_file is not None and os.path.isfile(self.dict_file) :
             self.dictionary = corpora.Dictionary.load(self.dict_file)
         else:
@@ -114,7 +114,7 @@ class PVTransformer(TransformerMixin):
         self.epochs = epochs
         
         
-    def fit(self, X):
+    def fit(self, X, y=None):
         train_comments = X.values.flatten('F')
         train_documents = self._generate_labeled_sentences(train_comments)
         
@@ -128,7 +128,7 @@ class PVTransformer(TransformerMixin):
         return self
 
     
-    def fit_transform(self, X):
+    def fit_transform(self, X, y=None):
         self.fit(X)
         
         nrow = X.shape[0]
