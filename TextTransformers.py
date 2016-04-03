@@ -95,7 +95,7 @@ class LDATransformer(TransformerMixin):
 
 class PVTransformer(TransformerMixin):
 
-    def __init__(self, size=16, window=8, min_count=1, workers=1, random_seed=None):
+    def __init__(self, size=16, window=8, min_count=1, workers=1, alpha=0.025, dm=1, epochs=10, random_seed=None):
         
         self.random_seed = random_seed
         self.pv_model = None
@@ -103,16 +103,26 @@ class PVTransformer(TransformerMixin):
         # should be tuned
         self.size = size
         self.window = window
+        self.alpha = alpha
+        self.dm = dm
         
         # may be left as default
         self.min_count = min_count
         self.workers = workers
+        self.epochs = epochs
         
         
     def fit(self, X):
         train_comments = X.values.flatten('F')
         train_documents = self._generate_labeled_sentences(train_comments)
-        self.pv_model = Doc2Vec(train_documents, size=self.size, window=self.window, min_count=self.min_count, workers=self.workers, seed=self.random_seed)
+        
+        self.pv_model = Doc2Vec(size=self.size, window=self.window, alpha=self.alpha, min_count=self.min_count, workers=self.workers, seed=self.random_seed, dm=self.dm) 
+        self.pv_model.build_vocab(train_documents)
+        np.random.seed(self.random_seed)
+        for epoch in range(self.epochs):
+            np.random.shuffle(train_documents)
+            self.pv_model.train(train_documents)
+            
         return self
 
     
@@ -126,7 +136,8 @@ class PVTransformer(TransformerMixin):
         train_X = np.hstack(np.vsplit(train_X, ncol))
         colnames = ["pv%s_event%s"%(vec+1, event+1) for event in range(ncol) for vec in range(self.size)]
 
-        return pd.DataFrame(train_X, columns=colnames, index=X.index)
+        train_X = pd.DataFrame(train_X, columns=colnames, index=X.index)
+        return train_X
     
     
     def transform(self, X):
@@ -137,7 +148,9 @@ class PVTransformer(TransformerMixin):
         test_X = np.hstack(np.vsplit(np.array(vecs), ncol))
         colnames = ["pv%s_event%s"%(vec+1, event+1) for event in range(ncol) for vec in range(self.size)]
         
-        return pd.DataFrame(test_X, columns=colnames, index=X.index)
+        test_X = pd.DataFrame(test_X, columns=colnames, index=X.index)
+        test_X.to_csv("test_X_pv2.csv", sep=";")
+        return test_X
     
     
     def _generate_labeled_sentences(self, comments):
