@@ -6,13 +6,10 @@ from sklearn.base import TransformerMixin
 
 class LDATransformer(TransformerMixin):
 
-    def __init__(self, dictionary, num_topics=20, tfidf=False, 
+    def __init__(self, num_topics=20, tfidf=False, 
                  passes=3, iterations=700, min_prob=0, min_freq=0, random_seed=None):
         
         self.random_seed = random_seed
-        
-        # should be pre-built
-        self.dictionary = dictionary
         
         # should be tuned
         self.num_topics = num_topics
@@ -24,12 +21,14 @@ class LDATransformer(TransformerMixin):
         self.min_prob = min_prob
         self.min_freq = min_freq
         
+        self.dictionary = None
         self.lda_model = None
         self.tfidf_model = None
         
 
         
     def fit(self, X):
+        self.dictionary = self._generate_dictionary(X)
         corpus = self._generate_corpus_data(X)
         np.random.seed(self.random_seed)
         self.lda_model = gensim_models.LdaModel(corpus, id2word=self.dictionary, num_topics=self.num_topics, 
@@ -49,6 +48,12 @@ class LDATransformer(TransformerMixin):
         topic_colnames = ["topic%s_event%s"%(topic+1, event+1) for event in range(ncol) for topic in range(self.num_topics)]
 
         return pd.DataFrame(topic_data, columns=topic_colnames, index=X.index)
+    
+    
+    def _generate_dictionary(self, X):
+        data = X.values.flatten('F')
+        texts = [[word for word in str(document).lower().split()] for document in data]
+        return corpora.Dictionary(texts)
     
     
     def _generate_corpus_data(self, X):
