@@ -97,7 +97,7 @@ class LDATransformer(TransformerMixin):
 
 class PVTransformer(TransformerMixin):
 
-    def __init__(self, size=16, window=8, min_count=1, workers=1, alpha=0.025, dm=1, epochs=10, random_seed=None):
+    def __init__(self, size=16, window=8, min_count=1, workers=1, alpha=0.025, dm=1, epochs=1, random_seed=None):
         
         self.random_seed = random_seed
         self.pv_model = None
