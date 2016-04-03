@@ -5,6 +5,8 @@ from gensim import models as gensim_models
 from gensim.models.doc2vec import LabeledSentence
 from gensim.models import Doc2Vec
 from sklearn.base import TransformerMixin
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.feature_selection import SelectKBest, chi2
 import os.path
 
 class LDATransformer(TransformerMixin):
@@ -156,3 +158,113 @@ class PVTransformer(TransformerMixin):
     def _generate_labeled_sentences(self, comments):
         documents = [LabeledSentence(words=comment.split(), tags=[i]) for i, comment in enumerate(comments)]
         return(documents)
+    
+    
+
+class BoNGTransformer(TransformerMixin):
+
+    def __init__(self, ngram_min=1, ngram_max=1, tfidf=False, nr_selected=100):
+        
+        # should be tuned
+        self.ngram_max = ngram_max
+        self.tfidf = tfidf
+        self.nr_selected = nr_selected
+        
+        # may be left as default
+        self.ngram_min = ngram_min
+        
+        self.vectorizer = None
+        self.feature_selector = SelectKBest(chi2, k=self.nr_selected)
+        self.selected_cols = None
+        
+        
+    def fit(self, X, y):
+        data = X.values.flatten('F')
+        if self.tfidf:
+            self.vectorizer = TfidfVectorizer(ngram_range=(self.ngram_min,self.ngram_max))
+        else:
+            self.vectorizer = CountVectorizer(ngram_range=(self.ngram_min,self.ngram_max))
+        bong = self.vectorizer.fit_transform(data)
+
+        # select features
+        if self.nr_selected=="all" or len(self.vectorizer.get_feature_names()) <= self.nr_selected:
+            self.feature_selector = SelectKBest(chi2, k="all")
+        self.feature_selector.fit(bong, y)
+        
+        # remember selected column names
+        if self.nr_selected=="all":
+            self.selected_cols = np.array(self.vectorizer.get_feature_names())
+        else:
+            self.selected_cols = np.array(self.vectorizer.get_feature_names())[self.feature_selector.scores_.argsort()[-self.nr_selected:][::-1]]
+        
+        return self
+    
+    
+    def transform(self, X):
+        bong = self.vectorizer.transform(X)
+        bong = self.feature_selector.transform(bong)
+        bong = bong.toarray()
+        
+        return pd.DataFrame(bong, columns=self.selected_cols, index=X.index)
+    
+    
+    
+class NBLogCountRatioTransformer(TransformerMixin):
+
+    def __init__(self, ngram_min=1, ngram_max=1, alpha=1.0, nr_selected=100, pos_label="positive"):
+        
+        # should be tuned
+        self.ngram_max = ngram_max
+        self.alpha = alpha
+        self.nr_selected = nr_selected
+        
+        # may be left as default
+        self.ngram_min = ngram_min
+        
+        self.pos_label = pos_label
+        self.vectorizer = CountVectorizer(ngram_range=(ngram_min,ngram_max))
+        
+        
+    def fit(self, X, y):
+        data = X.values.flatten('F')
+        bong = self.vectorizer.fit_transform(X)
+        bong = bong.toarray()
+        
+        # calculate nb ratios
+        pos_bong = bong[y == self.pos_label]
+        neg_bong = bong[y != self.pos_label]
+        pos_sum = pos_bong.sum()
+        neg_sum = neg_bong.sum()
+        p = 1.0 * pos_bong.sum(axis=0) + self.alpha
+        q = 1.0 * neg_bong.sum(axis=0) + self.alpha
+        r = np.log((p / pos_sum) / (q / neg_sum))
+        self.nb_r = r
+        r = np.squeeze(np.asarray(r))
+        
+        # feature selection
+        if (self.nr_selected >= len(r)): 
+            r_selected = range(len(r))
+        else:
+            r_sorted = np.argsort(r)
+            r_selected = np.concatenate([r_sorted[:self.nr_selected/2], r_sorted[-self.nr_selected/2:]])
+        self.r_selected = r_selected
+        
+        if self.nr_selected=="all":
+            self.selected_cols = np.array(self.vectorizer.get_feature_names())
+        else:
+            self.selected_cols = np.array(self.vectorizer.get_feature_names())[self.r_selected]
+            
+        return self
+    
+    
+    def transform(self, X):
+        bong = self.vectorizer.transform(X)
+        bong = bong.toarray()
+            
+        # generate transformed selected data
+        bong = bong * self.nb_r
+        bong = bong[:,self.r_selected]
+        
+        return pd.DataFrame(bong, columns=self.selected_cols, index=X.index)
+    
+    
