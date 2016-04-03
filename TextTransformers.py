@@ -2,14 +2,15 @@ import pandas as pd
 import numpy as np
 from gensim import corpora, similarities
 from gensim import models as gensim_models
+from gensim.models.doc2vec import LabeledSentence
+from gensim.models import Doc2Vec
 from sklearn.base import TransformerMixin
+import os.path
 
 class LDATransformer(TransformerMixin):
 
     def __init__(self, num_topics=20, tfidf=False, 
-                 passes=3, iterations=700, min_prob=0, min_freq=0, random_seed=None):
-        
-        self.random_seed = random_seed
+                 passes=3, iterations=700, min_prob=0, min_freq=0, save_dict=False, dict_file=None, random_seed=None):
         
         # should be tuned
         self.num_topics = num_topics
@@ -21,6 +22,11 @@ class LDATransformer(TransformerMixin):
         self.min_prob = min_prob
         self.min_freq = min_freq
         
+        # for reproducability
+        self.random_seed = random_seed
+        self.save_dict = save_dict
+        self.dict_file = dict_file
+        
         self.dictionary = None
         self.lda_model = None
         self.tfidf_model = None
@@ -28,7 +34,10 @@ class LDATransformer(TransformerMixin):
 
         
     def fit(self, X):
-        self.dictionary = self._generate_dictionary(X)
+        if self.dict_file is not None and os.path.isfile(self.dict_file) :
+            self.dictionary = corpora.Dictionary.load(self.dict_file)
+        else:
+            self.dictionary = self._generate_dictionary(X)
         corpus = self._generate_corpus_data(X)
         np.random.seed(self.random_seed)
         self.lda_model = gensim_models.LdaModel(corpus, id2word=self.dictionary, num_topics=self.num_topics, 
@@ -53,7 +62,10 @@ class LDATransformer(TransformerMixin):
     def _generate_dictionary(self, X):
         data = X.values.flatten('F')
         texts = [[word for word in str(document).lower().split()] for document in data]
-        return corpora.Dictionary(texts)
+        dictionary = corpora.Dictionary(texts)
+        if self.save_dict:
+            dictionary.save(self.dict_file)
+        return dictionary
     
     
     def _generate_corpus_data(self, X):
@@ -78,3 +90,56 @@ class LDATransformer(TransformerMixin):
             corpus_tfidf = self.tfidf_model[corpus]
             return(corpus_tfidf)
         return corpus
+    
+
+
+class PVTransformer(TransformerMixin):
+
+    def __init__(self, size=16, window=8, min_count=1, workers=1, random_seed=None):
+        
+        self.random_seed = random_seed
+        self.pv_model = None
+        
+        # should be tuned
+        self.size = size
+        self.window = window
+        
+        # may be left as default
+        self.min_count = min_count
+        self.workers = workers
+        
+        
+    def fit(self, X):
+        train_comments = X.values.flatten('F')
+        train_documents = self._generate_labeled_sentences(train_comments)
+        self.pv_model = Doc2Vec(train_documents, size=self.size, window=self.window, min_count=self.min_count, workers=self.workers, seed=self.random_seed)
+        return self
+
+    
+    def fit_transform(self, X):
+        self.fit(X)
+        
+        nrow = X.shape[0]
+        ncol = X.shape[1]
+        
+        train_X = self.pv_model.docvecs[range(nrow*ncol)]
+        train_X = np.hstack(np.vsplit(train_X, ncol))
+        colnames = ["pv%s_event%s"%(vec+1, event+1) for event in range(ncol) for vec in range(self.size)]
+
+        return pd.DataFrame(train_X, columns=colnames, index=X.index)
+    
+    
+    def transform(self, X):
+        ncol = X.shape[1]
+            
+        test_comments = X.values.flatten('F')
+        vecs = [self.pv_model.infer_vector(comment.split()) for comment in test_comments]
+        test_X = np.hstack(np.vsplit(np.array(vecs), ncol))
+        colnames = ["pv%s_event%s"%(vec+1, event+1) for event in range(ncol) for vec in range(self.size)]
+        
+        return pd.DataFrame(test_X, columns=colnames, index=X.index)
+    
+    
+    def _generate_labeled_sentences(self, comments):
+        documents = [LabeledSentence(words=comment.split(), tags=[i]) for i, comment in enumerate(comments)]
+        return(documents)
