@@ -30,7 +30,7 @@ for document in corpus:
 
 ## Sequence encoding
 
-The `SequenceEncoder` enables encoding data as a complex sequence using index-based encoding. The input data should be roughly in the following format:
+The `SequenceEncoder` enables encoding data as a complex sequence using index-based encoding. The input data should be in the following format:
 
     case_id;event_nr;class_label;dynamic_attr1;...;dynamic_attr_n;static_attr1;...;static_attr_h
     
@@ -67,7 +67,7 @@ Four transformers are implemented:
 Example usage of the text transformers is shown below. `X` stands for a pandas `DataFrame` consisting of one or more textual columns, while `y` contains the target variable (class labels). Note that `X` should contain textual columns only.
 
 ```python
-from TextTransformers import LDATransformer
+from TextTransformers import LDATransformer, PVTransformer, BoNGTransformer, NBLogCountRatioTransformer
 
 lda_transformer = LDATransformer(num_topics=20, tfidf=False, passes=3, iterations=700, random_seed=22)
 lda_transformer.fit(X)
