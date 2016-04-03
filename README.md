@@ -20,11 +20,15 @@ Scripts related to predictive business process monitoring framework with structu
 
 Before using the text models, textual data should be lemmatized. An example for Estonian language is given below.
 
-    from estnltk import Text
+```python
+from estnltk import Text
 
     for idx, row in data.iterrows():
         text = Text(row["text_col"].lower())
         data.loc[idx]["lemmas_col"] = text.lemmas
+}
+```
+    
 
 
 ## Text models
