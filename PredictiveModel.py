@@ -6,16 +6,16 @@ import pandas as pd
 
 class PredictiveModel():
 
-    def __init__(self, case_id_col, label_col, encoder_kwargs, transformer_kwargs, cls_kwargs, text_col=None,
+    def __init__(self, nr_events, case_id_col, label_col, encoder_kwargs, transformer_kwargs, cls_kwargs, text_col=None,
                  text_transformer_type=None, cls_method="rf"):
         
         self.text_col = text_col
         self.case_id_col = case_id_col
         self.label_col = label_col
         
-        self.encoder = SequenceEncoder(case_id_col=case_id_col, label_col=label_col, **encoder_kwargs)
+        self.encoder = SequenceEncoder(nr_events=nr_events, case_id_col=case_id_col, label_col=label_col, **encoder_kwargs)
         
-        if text_transformer_type == None:
+        if text_transformer_type is None:
             self.transformer = None
         elif text_transformer_type == "LDATransformer":
             self.transformer = LDATransformer(**transformer_kwargs)
@@ -37,9 +37,9 @@ class PredictiveModel():
             print("Classifier method not known")
         
 
-    def fit(self, X):
+    def fit(self, dt_train):
         
-        train_encoded = self.encoder.fit_transform(X)
+        train_encoded = self.encoder.fit_transform(dt_train)
         
         train_X = train_encoded.drop([self.case_id_col, self.label_col], axis=1)
         train_y = train_encoded[self.label_col]
@@ -54,8 +54,8 @@ class PredictiveModel():
         self.cls.fit(train_X, train_y)
 
         
-    def predict_proba(self, X):
-        test_encoded = self.encoder.transform(X)
+    def predict_proba(self, dt_test):
+        test_encoded = self.encoder.transform(dt_test)
         
         test_X = test_encoded.drop([self.case_id_col, self.label_col], axis=1)
         
@@ -65,6 +65,7 @@ class PredictiveModel():
             test_text = self.transformer.transform(test_encoded[text_cols[len(text_cols)-1]])
             test_X = pd.concat([test_X.drop(text_cols, axis=1), test_text], axis=1)
         
+        self.test_case_names = test_encoded[self.case_id_col]
         self.test_X = test_X
         self.test_y = test_encoded[self.label_col]
         predictions_proba = self.cls.predict_proba(test_X)

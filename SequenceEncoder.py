@@ -17,6 +17,9 @@ class SequenceEncoder():
         self.random_state = random_state
         self.fillna = fillna
         
+        self.fitted_columns = None
+        
+        
     def fit(self, X):
         return self
         
@@ -50,6 +53,14 @@ class SequenceEncoder():
         vec_cat_dict = vectorizer.fit_transform(cat_dict)
         cat_data = pd.DataFrame(vec_cat_dict, columns=vectorizer.feature_names_)
         data_final = pd.concat([data_final.drop(catecorical_cols, axis=1), cat_data], axis=1)
+        
+        if self.fitted_columns is not None:
+            missing_cols = self.fitted_columns[~self.fitted_columns.isin(data_final.columns)]
+            for col in missing_cols:
+                data_final[col] = 0
+            data_final = data_final[self.fitted_columns]
+        else:
+            self.fitted_columns = data_final.columns
         
         # fill NA
         if self.fillna:
