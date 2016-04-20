@@ -39,7 +39,7 @@ class PredictiveMonitor():
             self.models[nr_events] = pred_model
     
     
-    def test(self, dt_test, confidences, evaluate=True, case_lengths=None, output_filename=None):
+    def test(self, dt_test, confidences=[0.6], evaluate=True, case_lengths=None, output_filename=None):
         
         for confidence in confidences:
             results = self._test_single_conf(dt_test, confidence)

@@ -88,8 +88,55 @@ nb_transformer.transform(X)
 ```
 
 
+## Predictive model
+
+The `PredictiveModel` class enables building a predictive model for a fixed prefix length, starting from raw data sets. The initializer expects as input the `text_transformer_type` (one of {`None`, "LDATransformer", "PVTransformer", "BoNGTransformer", "NBLogCountRatioTransformer"}) and classifier type `cls_method`, where "rf" stands for sklearn's `RandomForestClassifier` and "logit" stands for `LogisticRegression`. Furthermore, the prefix length should be predefined in `nr_events`, the names of relevant columns as `case_id_col`, `label_col`, `text_col`, and label of the positive class (`pos_label`). Additional arguments that should be forwarded to the `SequenceEncoder`, text transformer, and classifier should be given as `encoder_kwargs`, `transformer_kwargs`, and `cls_kwargs`, respectively (see sections above for details of these arguments).
+
+Example usage:
+
+```python
+from PredictiveModel import PredictiveModel
+
+encoder_kwargs = {"event_nr_col":event_nr_col, "static_cols":static_cols, "dynamic_cols":dynamic_cols,
+                  "cat_cols":cat_cols,"oversample_fit":False, "minority_label":"unsuccessful",
+                  "fillna":True, "random_state":22}
+transformer_kwargs = {"ngram_max":ngram_max, "alpha":alpha, "nr_selected":nr_selected, 
+                      "pos_label":pos_label}
+cls_kwargs = {"n_estimators":500, "random_state":22}
+
+pred_model = PredictiveModel(nr_events=nr_events, case_id_col=case_id_col, 
+                             label_col=label_col, pos_label=pos_label, text_col=text_col, 
+                             text_transformer_type="NBLogCountRatioTransformer", cls_method="rf",
+                             encoder_kwargs=encoder_kwargs, transformer_kwargs=transformer_kwargs, 
+                             cls_kwargs=cls_kwargs)
+
+pred_model.fit(train)
+predictions_proba = pred_model.predict_proba(test)
+```
+
     
 
 ## Predictive monitoring
 
-Coming soon.
+The `PredictiveMonitor` trains multiple `PredictiveModel`s (one for each possible prefix length) that consitute the offline component of the predictive monitoring framework. The arguments are the same as for `PredictiveModel`, with the exception of `event_nr_col` instead of `nr_events`. In the test phase, each case is monitored until a sufficient confidence level is achieved or the case ends. Possible arguments for testing function are a list of `confidences` to produce the results for, boolean `evaluate` if different metrics should be calculated, `case_lengths` as a dictionary of "case\_name: case\_length", which is necessary to calculate prediction earliness, and `output_filename` if the results should be written to an external file. 
+
+```python
+from PredictiveMonitor import PredictiveMonitor
+
+encoder_kwargs = {"event_nr_col":event_nr_col, "static_cols":static_cols, "dynamic_cols":dynamic_cols,
+                  "cat_cols":cat_cols, "oversample_fit":False, "minority_label":"unsuccessful", 
+                  "fillna":True, "random_state":22}
+transformer_kwargs = {"ngram_max":ngram_max, "alpha":alpha, "nr_selected":nr_selected, 
+                  "pos_label":pos_label}
+cls_kwargs = {"n_estimators":500, "random_state":22}
+
+predictive_monitor = PredictiveMonitor(event_nr_col=event_nr_col, case_id_col=case_id_col,
+                                      label_col=label_col, pos_label=pos_label, text_col=text_col,
+                                      text_transformer_type="NBLogCountRatioTransformer", cls_method="rf",
+                                      encoder_kwargs=encoder_kwargs, transformer_kwargs=transformer_kwargs, 
+                                      cls_kwargs=cls_kwargs)
+
+predictive_monitor.train(train)
+predictive_monitor.test(test, confidences=[0.5, 0.75, 0.9], evaluate=True, 
+                        case_lengths={"case1": 4, "case2": 7}, output_filename="example_output.txt")
+```
