@@ -40,14 +40,14 @@ class PredictiveMonitor():
             self.models[nr_events] = pred_model
     
     
-    def test(self, dt_test, confidences=[0.6], evaluate=True, case_lengths=None, output_filename=None, outfile_mode='w', performance_output_filename=None):
+    def test(self, dt_test, confidences=[0.6], evaluate=True, output_filename=None, outfile_mode='w', performance_output_filename=None):
         
         for confidence in confidences:
             results = self._test_single_conf(dt_test, confidence)
             self.predictions[confidence] = results
             
             if evaluate:
-                evaluation = self._evaluate(dt_test, results, case_lengths)
+                evaluation = self._evaluate(dt_test, results)
                 self.evaluations[confidence] = evaluation
                 
         if output_filename is not None:
@@ -111,9 +111,10 @@ class PredictiveMonitor():
         return(results)
         
         
-    def _evaluate(self, dt_test, results, case_lengths):
+    def _evaluate(self, dt_test, results):
         
         dt_test = dt_test[dt_test[self.event_nr_col] == 1]
+        case_lengths = dt_test[self.case_id_col].value_counts()
         N = len(dt_test)
 
         tp = 0

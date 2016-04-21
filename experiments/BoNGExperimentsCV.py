@@ -65,6 +65,6 @@ for train_index, test_index in kf:
                     predictive_monitor.train(train_chunk)
                     
                     # test
-                    predictive_monitor.test(test_chunk, confidences, evaluate=True, case_lengths=None, output_filename="cv_results/bong_selected%s_%sngram%s_%s_part%s"%(nr_selected, ("tfidf_" if tfidf else ""), ngram_max, cls_method, part))
+                    predictive_monitor.test(test_chunk, confidences, evaluate=True, output_filename="cv_results/bong_selected%s_%sngram%s_%s_part%s"%(nr_selected, ("tfidf_" if tfidf else ""), ngram_max, cls_method, part))
                     
     part += 1

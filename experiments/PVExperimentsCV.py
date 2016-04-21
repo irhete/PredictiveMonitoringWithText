@@ -64,6 +64,6 @@ for train_index, test_index in kf:
                 predictive_monitor.train(train_chunk)
 
                 # test
-                predictive_monitor.test(test_chunk, confidences, evaluate=True, case_lengths=None, output_filename="cv_results/pv_size%s_window%s_%s_part%s"%(size, window, cls_method, part))
+                predictive_monitor.test(test_chunk, confidences, evaluate=True, output_filename="cv_results/pv_size%s_window%s_%s_part%s"%(size, window, cls_method, part))
 
     part += 1
