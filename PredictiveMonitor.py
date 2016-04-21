@@ -1,5 +1,6 @@
 from PredictiveModel import PredictiveModel
 import numpy as np
+import os.path
 
 class PredictiveMonitor():
     
@@ -39,7 +40,7 @@ class PredictiveMonitor():
             self.models[nr_events] = pred_model
     
     
-    def test(self, dt_test, confidences=[0.6], evaluate=True, case_lengths=None, output_filename=None):
+    def test(self, dt_test, confidences=[0.6], evaluate=True, case_lengths=None, output_filename=None, outfile_mode='w'):
         
         for confidence in confidences:
             results = self._test_single_conf(dt_test, confidence)
@@ -51,8 +52,11 @@ class PredictiveMonitor():
                 
         if output_filename is not None:
             metric_names = list(self.evaluations[confidences[0]].keys())
-            with open(output_filename, 'w') as fin:
-                fin.write("confidence;value;metric\n")
+            if not os.path.isfile(output_filename):
+                outfile_mode = 'w'
+            with open(output_filename, outfile_mode) as fin:
+                if outfile_mode == 'w':
+                    fin.write("confidence;value;metric\n")
                 for confidence in confidences:
                     for k,v in self.evaluations[confidence].items():
                         fin.write("%s;%s;%s\n"%(confidence, v, k))

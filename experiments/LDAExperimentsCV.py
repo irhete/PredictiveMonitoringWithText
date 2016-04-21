@@ -5,7 +5,8 @@ import sys
 sys.path.append('..')
 from PredictiveMonitor import PredictiveMonitor
 
-data_filepath = "data_preprocessed.csv"
+data_filepath = "/home/irene/Documents/register/from_p12/data_preprocessed.csv"
+#data_filepath = "data_preprocessed.csv"
 data = pd.read_csv(data_filepath, sep=";", encoding="utf-8")
 
 dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances", 
@@ -56,7 +57,7 @@ for train_index, test_index in kf:
         for k in [10, 25, 50, 75, 100, 200]:
             for tfidf in [True, False]:
                     
-                transformer_kwargs = {"num_topics":k, "tfidf":tfidf, random_seed=22}
+                transformer_kwargs = {"num_topics":k, "tfidf":tfidf, random_seed:22}
 
                 # train
                 predictive_monitor = PredictiveMonitor(event_nr_col=event_nr_col, case_id_col=case_id_col, label_col=label_col, pos_label=pos_label, encoder_kwargs=encoder_kwargs, cls_kwargs=cls_kwargs, transformer_kwargs=transformer_kwargs, text_col=text_col, text_transformer_type=text_transformer_type, cls_method=cls_method)
