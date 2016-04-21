@@ -35,6 +35,10 @@ class SequenceEncoder():
         
     def _encode(self, X):
         # endoce static cols
+        if self.label_col not in self.static_cols:
+            self.static_cols.append(self.label_col)
+        if self.case_id_col not in self.static_cols:
+            self.static_cols.append(self.case_id_col)
         data_final = X[X[self.event_nr_col] == 1][self.static_cols]
         
         # encode dynamic cols
@@ -73,7 +77,7 @@ class SequenceEncoder():
 
         if oversample_count > 0 and sum(X[self.label_col] == self.minority_label) > 0:
             oversampled_data = X[X[self.label_col]==self.minority_label].sample(oversample_count, replace=True, random_state=self.random_state)
-            data = pd.concat([X, oversampled_data])
+            X = pd.concat([X, oversampled_data])
 
-        return data
+        return X
         

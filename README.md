@@ -120,6 +120,8 @@ predictions_proba = pred_model.predict_proba(test)
 
 The `PredictiveMonitor` trains multiple `PredictiveModel`s (one for each possible prefix length) that consitute the offline component of the predictive monitoring framework. The arguments are the same as for `PredictiveModel`, with the exception of `event_nr_col` instead of `nr_events`. In the test phase, each case is monitored until a sufficient confidence level is achieved or the case ends. Possible arguments for testing function are a list of `confidences` to produce the results for, boolean `evaluate` if different metrics should be calculated, `case_lengths` as a dictionary of "case\_name: case\_length", which is necessary to calculate prediction earliness, and `output_filename` if the results should be written to an external file. 
 
+Example usage:
+
 ```python
 from PredictiveMonitor import PredictiveMonitor
 
@@ -140,3 +142,5 @@ predictive_monitor.train(train)
 predictive_monitor.test(test, confidences=[0.5, 0.75, 0.9], evaluate=True, 
                         case_lengths={"case1": 4, "case2": 7}, output_filename="example_output.txt")
 ```
+
+Real examples of predictive monitoring can be found in folder "experiments".
