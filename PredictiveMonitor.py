@@ -40,7 +40,7 @@ class PredictiveMonitor():
             self.models[nr_events] = pred_model
     
     
-    def test(self, dt_test, confidences=[0.6], evaluate=True, case_lengths=None, output_filename=None, outfile_mode='w'):
+    def test(self, dt_test, confidences=[0.6], evaluate=True, case_lengths=None, output_filename=None, outfile_mode='w', performance_output_filename=None):
         
         for confidence in confidences:
             results = self._test_single_conf(dt_test, confidence)
@@ -54,12 +54,18 @@ class PredictiveMonitor():
             metric_names = list(self.evaluations[confidences[0]].keys())
             if not os.path.isfile(output_filename):
                 outfile_mode = 'w'
-            with open(output_filename, outfile_mode) as fin:
+            with open(output_filename, outfile_mode) as fout:
                 if outfile_mode == 'w':
-                    fin.write("confidence;value;metric\n")
+                    fout.write("confidence;value;metric\n")
                 for confidence in confidences:
                     for k,v in self.evaluations[confidence].items():
-                        fin.write("%s;%s;%s\n"%(confidence, v, k))
+                        fout.write("%s;%s;%s\n"%(confidence, v, k))
+                        
+        if performance_output_filename is not None:
+             with open(performance_output_filename, 'w') as fout:
+                    fout.write("nr_events;train_preproc_time;train_cls_time;test_preproc_time;test_time;nr_test_cases\n")
+                    for nr_events, pred_model in self.models.items():
+                        fout.write("%s;%s;%s;%s;%s;%s\n"%(nr_events, pred_model.preproc_time, pred_model.cls_time, pred_model.test_preproc_time, pred_model.test_time, pred_model.nr_test_cases))
                 
     
     def _test_single_conf(self, dt_test, confidence):

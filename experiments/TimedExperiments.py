@@ -23,30 +23,30 @@ train_names, test_names = train_test_split( data[case_id_col].unique(), train_si
 train = data[data[case_id_col].isin(train_names)]
 test = data[data[case_id_col].isin(test_names)]
 
-confidences = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+conf = 0.6
+n_iterations = 10
 text_transformer_types = [None, "LDATransformer", "PVTransformer", "BoNGTransformer", "NBLogCountRatioTransformer"]
 out_filename_bases = {None:"base", "LDATransformer":"lda", "PVTransformer":"pv", "BoNGTransformer":"bong", "NBLogCountRatioTransformer":"nb"}
 cls_methods = ["rf", "logit"]
 
-for cls_method in cls_methods:
-    if cls_method == "rf":
-            cls_kwargs = {"n_estimators":500, "random_state":22}
-    else:
-        cls_kwargs = {"random_state":22}
-    
-    optimal_params = pd.read_csv("cv_results/optimal_params_%s"%cls_method, sep=";")
-        
-    for text_transformer_type in text_transformer_types:
-        if text_transformer_type is None:
-            dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances", 
-                "bilanss_client"]
+for i in range(n_iterations):
+    for cls_method in cls_methods:
+        if cls_method == "rf":
+                cls_kwargs = {"n_estimators":500, "random_state":22}
         else:
-            dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances", 
-                "bilanss_client", "event_description_lemmas"]
-        encoder_kwargs = {"event_nr_col":event_nr_col, "static_cols":static_cols, "dynamic_cols":dynamic_cols, "cat_cols":cat_cols, "oversample_fit":True, "minority_label":pos_label, "fillna":True, "random_state":22}
-            
-        for conf in confidences:
-        
+            cls_kwargs = {"random_state":22}
+
+        optimal_params = pd.read_csv("cv_results/optimal_params_%s"%cls_method, sep=";")
+
+        for text_transformer_type in text_transformer_types:
+            if text_transformer_type is None:
+                dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances", 
+                    "bilanss_client"]
+            else:
+                dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances", 
+                    "bilanss_client", "event_description_lemmas"]
+            encoder_kwargs = {"event_nr_col":event_nr_col, "static_cols":static_cols, "dynamic_cols":dynamic_cols, "cat_cols":cat_cols, "oversample_fit":True, "minority_label":pos_label, "fillna":True, "random_state":22}
+
             if text_transformer_type is None:
                 transformer_kwargs = None
             elif text_transformer_type == "LDATransformer":
@@ -72,5 +72,5 @@ for cls_method in cls_methods:
             predictive_monitor = PredictiveMonitor(event_nr_col=event_nr_col, case_id_col=case_id_col, label_col=label_col, pos_label=pos_label, encoder_kwargs=encoder_kwargs, cls_kwargs=cls_kwargs, transformer_kwargs=transformer_kwargs, text_col=text_col, text_transformer_type=text_transformer_type, cls_method=cls_method)
             predictive_monitor.train(train)
 
-            # test
-            predictive_monitor.test(test, confidences=[conf], evaluate=True, case_lengths=None, output_filename="final_results/%s_%s"%(out_filename_bases[text_transformer_type], cls_method), outfile_mode='a')
+                # test
+            predictive_monitor.test(test, confidences=[conf], evaluate=False, case_lengths=None, performance_output_filename="timed_results/%s_%s_%s"%(out_filename_bases[text_transformer_type], cls_method, i+1))

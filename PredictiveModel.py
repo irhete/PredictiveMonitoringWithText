@@ -3,6 +3,7 @@ from TextTransformers import LDATransformer, PVTransformer, BoNGTransformer, NBL
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import pandas as pd
+import time
 
 class PredictiveModel():
 
@@ -38,7 +39,7 @@ class PredictiveModel():
         
 
     def fit(self, dt_train):
-        
+        preproc_start_time = time.time()
         train_encoded = self.encoder.fit_transform(dt_train)
         
         train_X = train_encoded.drop([self.case_id_col, self.label_col], axis=1)
@@ -49,12 +50,18 @@ class PredictiveModel():
             #train_text = self.transformer.fit_transform(train_X[text_cols], train_y)
             train_text = self.transformer.fit_transform(train_encoded[text_cols[len(text_cols)-1]], train_y)
             train_X = pd.concat([train_X.drop(text_cols, axis=1), train_text], axis=1)
-        
         self.train_X = train_X
+        preproc_end_time = time.time()
+        self.preproc_time = preproc_end_time - preproc_start_time
+        
+        cls_start_time = time.time()
         self.cls.fit(train_X, train_y)
+        cls_end_time = time.time()
+        self.cls_time = cls_end_time - cls_start_time
 
         
     def predict_proba(self, dt_test):
+        test_preproc_start_time = time.time()
         test_encoded = self.encoder.transform(dt_test)
         
         test_X = test_encoded.drop([self.case_id_col, self.label_col], axis=1)
@@ -68,5 +75,13 @@ class PredictiveModel():
         self.test_case_names = test_encoded[self.case_id_col]
         self.test_X = test_X
         self.test_y = test_encoded[self.label_col]
+        test_preproc_end_time = time.time()
+        self.test_preproc_time = test_preproc_end_time - test_preproc_start_time
+        
+        test_start_time = time.time()
         predictions_proba = self.cls.predict_proba(test_X)
+        test_end_time = time.time()
+        self.test_time = test_end_time - test_start_time
+        self.nr_test_cases = len(predictions_proba)
+        
         return predictions_proba
