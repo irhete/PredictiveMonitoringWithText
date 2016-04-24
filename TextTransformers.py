@@ -201,7 +201,8 @@ class BoNGTransformer(TransformerMixin):
     
     
     def transform(self, X):
-        bong = self.vectorizer.transform(X)
+        data = X.values.flatten('F')
+        bong = self.vectorizer.transform(data)
         bong = self.feature_selector.transform(bong)
         bong = bong.toarray()
         
