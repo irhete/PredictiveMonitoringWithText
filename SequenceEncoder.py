@@ -3,8 +3,8 @@ from sklearn.feature_extraction import DictVectorizer as DV
 
 class SequenceEncoder():
     
-    def __init__(self, nr_events, event_nr_col, case_id_col, label_col, static_cols=None, dynamic_cols=None, 
-                 last_state_cols=None, cat_cols=None, oversample_fit=True, minority_label="positive", fillna=True, 
+    def __init__(self, nr_events, event_nr_col, case_id_col, label_col, static_cols=[], dynamic_cols=[], 
+                 last_state_cols=[], cat_cols=[], oversample_fit=True, minority_label="positive", fillna=True, 
                  random_state=None):
         self.nr_events = nr_events
         self.static_cols = static_cols
