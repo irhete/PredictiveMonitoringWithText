@@ -47,8 +47,7 @@ class PredictiveModel():
         
         if self.transformer is not None:
             text_cols = [col for col in train_X.columns.values if col.startswith(self.text_col)]
-            #train_text = self.transformer.fit_transform(train_X[text_cols], train_y)
-            train_text = self.transformer.fit_transform(train_encoded[text_cols[len(text_cols)-1]], train_y)
+            train_text = self.transformer.fit_transform(train_X[text_cols], train_y)
             train_X = pd.concat([train_X.drop(text_cols, axis=1), train_text], axis=1)
         self.train_X = train_X
         preproc_end_time = time.time()
@@ -68,8 +67,7 @@ class PredictiveModel():
         
         if self.transformer is not None:
             text_cols = [col for col in test_X.columns.values if col.startswith(self.text_col)]
-            #test_text = self.transformer.transform(test_encoded[text_cols])
-            test_text = self.transformer.transform(test_encoded[text_cols[len(text_cols)-1]])
+            test_text = self.transformer.transform(test_encoded[text_cols])
             test_X = pd.concat([test_X.drop(text_cols, axis=1), test_text], axis=1)
         
         self.test_case_names = test_encoded[self.case_id_col]

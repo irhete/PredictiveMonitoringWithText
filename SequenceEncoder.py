@@ -3,11 +3,13 @@ from sklearn.feature_extraction import DictVectorizer as DV
 
 class SequenceEncoder():
     
-    def __init__(self, nr_events, event_nr_col, case_id_col, label_col, static_cols, dynamic_cols, 
-                 cat_cols, oversample_fit=True, minority_label="positive", fillna=True, random_state=None):
+    def __init__(self, nr_events, event_nr_col, case_id_col, label_col, static_cols=None, dynamic_cols=None, 
+                 last_state_cols=None, cat_cols=None, oversample_fit=True, minority_label="positive", fillna=True, 
+                 random_state=None):
         self.nr_events = nr_events
         self.static_cols = static_cols
         self.dynamic_cols = dynamic_cols
+        self.last_state_cols = last_state_cols
         self.cat_cols = cat_cols
         self.event_nr_col = event_nr_col
         self.case_id_col = case_id_col
@@ -46,6 +48,16 @@ class SequenceEncoder():
             data_selected = X[X[self.event_nr_col] == i][[self.case_id_col] + self.dynamic_cols]
             data_selected.columns = [self.case_id_col] + ["%s_%s"%(col, i) for col in self.dynamic_cols]
             data_final = pd.merge(data_final, data_selected, on=self.case_id_col, how="right")
+            
+        # encode last state cols
+        for col in self.last_state_cols:
+            data_final = pd.merge(data_final, X[X[self.event_nr_col] == self.nr_events][[self.case_id_col, col]], on=self.case_id_col, how="right")
+            for idx, row in data_final.iterrows():
+                current_nr_events = self.nr_events - 1
+                while pd.isnull(data_final.loc[idx, col]) and current_nr_events > 0:
+                    data_final.loc[idx, col] = X[(X[self.case_id_col] == row[self.case_id_col]) & (X[self.event_nr_col] == current_nr_events)].iloc[0][col]
+                    current_nr_events -= 1
+                    
         
         # make categorical
         dynamic_cat_cols = [col for col in self.cat_cols if col in self.dynamic_cols]

@@ -227,7 +227,7 @@ class NBLogCountRatioTransformer(TransformerMixin):
         
     def fit(self, X, y):
         data = X.values.flatten('F')
-        bong = self.vectorizer.fit_transform(X)
+        bong = self.vectorizer.fit_transform(data)
         bong = bong.toarray()
         
         # calculate nb ratios
@@ -258,12 +258,15 @@ class NBLogCountRatioTransformer(TransformerMixin):
     
     
     def transform(self, X):
-        bong = self.vectorizer.transform(X)
+        data = X.values.flatten('F')
+        bong = self.vectorizer.transform(data)
         bong = bong.toarray()
             
         # generate transformed selected data
         bong = bong * self.nb_r
         bong = bong[:,self.r_selected]
+        
+        
         
         return pd.DataFrame(bong, columns=self.selected_cols, index=X.index)
     

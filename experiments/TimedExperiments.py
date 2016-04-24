@@ -40,34 +40,46 @@ for i in range(n_iterations):
         optimal_params = pd.read_csv("cv_results/optimal_params_%s"%cls_method, sep=";")
 
         for text_transformer_type in text_transformer_types:
-            if text_transformer_type is None:
-                dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances", 
-                    "bilanss_client"]
-            else:
-                dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances", 
-                    "bilanss_client", "event_description_lemmas"]
-            encoder_kwargs = {"event_nr_col":event_nr_col, "static_cols":static_cols, "dynamic_cols":dynamic_cols, "cat_cols":cat_cols, "oversample_fit":True, "minority_label":pos_label, "fillna":True, "random_state":22}
-
+            
             if text_transformer_type is None:
                 transformer_kwargs = None
+                dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances",
+                                "bilanss_client"]
+                last_state_cols = []
             elif text_transformer_type == "LDATransformer":
                 k = int(optimal_params[optimal_params.confidence==conf].topic_k)
                 tfidf = (optimal_params[optimal_params.confidence==conf].topic_tfidf == "tfidf").iloc[0]
                 transformer_kwargs = {"num_topics":k, "tfidf":tfidf, random_seed:22}
+                dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances",
+                                "bilanss_client", "event_description_lemmas"]
+                last_state_cols = []
             elif text_transformer_type == "PVTransformer":
                 size = int(optimal_params[optimal_params.confidence==conf].doc2vec_size)
                 window = int(optimal_params[optimal_params.confidence==conf].doc2vec_window)
                 transformer_kwargs = {"size":size, "window":window, random_seed:22, epochs:10}
+                dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances",
+                                "bilanss_client", "event_description_lemmas"]
+                last_state_cols = []
             elif text_transformer_type == "BoNGTransformer":
                 ngram_max = int(optimal_params[optimal_params.confidence==conf].bow_ngram)
                 nr_selected = int(optimal_params[optimal_params.confidence==conf].bow_selected)
                 tfidf = (optimal_params[optimal_params.confidence==conf].bow_tfidf == "tfidf").iloc[0]
                 transformer_kwargs = {"ngram_max":ngram_max, "tfidf":tfidf, "nr_selected":nr_selected}
+                dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances",
+                                "bilanss_client"]
+                last_state_cols = ["event_description_lemmas"]
             elif text_transformer_type == "NBLogCountRatioTransformer":
                 ngram_max = int(optimal_params[optimal_params.confidence==conf].nb_ngram)
                 nr_selected = int(optimal_params[optimal_params.confidence==conf].nb_selected)
                 alpha = float(optimal_params[optimal_params.confidence==conf].nb_alpha)
                 transformer_kwargs = {"ngram_max":ngram_max, "alpha":alpha, "nr_selected":nr_selected}
+                dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances",
+                                "bilanss_client"]
+                last_state_cols = ["event_description_lemmas"]
+                
+            encoder_kwargs = {"event_nr_col":event_nr_col, "static_cols":static_cols, "dynamic_cols":dynamic_cols,
+                              "last_state_cols":last_state_cols, "cat_cols":cat_cols, "oversample_fit":True,
+                              "minority_label":pos_label, "fillna":True, "random_state":22}
 
             # train
             predictive_monitor = PredictiveMonitor(event_nr_col=event_nr_col, case_id_col=case_id_col, label_col=label_col, pos_label=pos_label, encoder_kwargs=encoder_kwargs, cls_kwargs=cls_kwargs, transformer_kwargs=transformer_kwargs, text_col=text_col, text_transformer_type=text_transformer_type, cls_method=cls_method)
