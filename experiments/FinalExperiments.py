@@ -5,8 +5,7 @@ import sys
 sys.path.append('..')
 from PredictiveMonitor import PredictiveMonitor
 
-data_filepath = "/home/irene/Documents/register/from_p12/data_preprocessed.csv"
-#data_filepath = "data_preprocessed.csv"
+data_filepath = "data_preprocessed.csv"
 data = pd.read_csv(data_filepath, sep=";", encoding="utf-8")
 
 static_cols = ['case_name', 'label', 'omakapital', 'kaive', 'state_tax_lq', 'lab_tax_lq', 'bilansimaht', 'puhaskasum', 'kasumlikkus', 'status_code', 'pr_1', 'pr_2', 'pr_3', 'pr_4', 'pr_5', 'pr_6', 'deg_1', 'deg_2', 'deg_3', 'deg_4', 'deg_5', 'deg_6', 'score_1', 'score_2', 'score_3', 'score_4', 'score_5', 'score_6', 'td_6', 'td_5', 'td_4', 'td_3', 'td_2', 'td_1', 'tdp_6', 'tdp_5', 'tdp_4', 'tdp_3', 'tdp_2', 'tdp_1', 'tdd_6', 'tdd_5', 'tdd_4', 'tdd_3', 'tdd_2', 'tdd_1', 'tdi_6', 'tdi_5', 'tdi_4', 'tdi_3', 'tdi_2', 'tdi_1', 'tdip_6', 'tdip_5', 'tdip_4', 'tdip_3', 'tdip_2', 'tdip_1', 'md_6', 'md_5', 'md_4', 'md_3', 'md_2', 'md_1', 'decl_6', 'decl_5', 'decl_4', 'decl_3', 'decl_2', 'decl_1', 'age', 'exp_payment_isna', 'state_tax_lq_isna', 'lab_tax_lq_isna', 'tax_debt_isna', 'tax_declar_isna', 'debt_balances_isna', 'debtors_name_isna', 'aasta_isna', 'kaive_isna', 'bilansimaht_isna', 'omakapital_isna', 'puhaskasum_isna', 'kasumlikkus_isna', 'bilanss_client_isna', 'status_code_isna', 'pr_1_isna', 'deg_1_isna', 'score_1_isna', 'td_1_isna', 'tdp_1_isna', 'tdd_1_isna', 'tdi_1_isna', 'tdip_1_isna', 'md_1_isna', 'decl_1_isna', 'age_isna']

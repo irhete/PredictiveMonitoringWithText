@@ -5,8 +5,7 @@ import sys
 sys.path.append('..')
 from PredictiveMonitor import PredictiveMonitor
 
-data_filepath = "/home/irene/Documents/register/from_p12/data_preprocessed.csv"
-#data_filepath = "data_preprocessed.csv"
+data_filepath = "data_preprocessed.csv"
 data = pd.read_csv(data_filepath, sep=";", encoding="utf-8")
 
 dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances", 
