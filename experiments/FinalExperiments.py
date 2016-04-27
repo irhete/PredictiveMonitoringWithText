@@ -24,53 +24,56 @@ train = data[data[case_id_col].isin(train_names)]
 test = data[data[case_id_col].isin(test_names)]
 
 confidences = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
-text_transformer_types = [None, "LDATransformer", "PVTransformer", "BoNGTransformer", "NBLogCountRatioTransformer"]
+text_transformer_types = [None, "LDATransformer", "BoNGTransformer", "NBLogCountRatioTransformer"] # "PVTransformer", 
 out_filename_bases = {None:"base", "LDATransformer":"lda", "PVTransformer":"pv", "BoNGTransformer":"bong", "NBLogCountRatioTransformer":"nb"}
 cls_methods = ["rf", "logit"]
 
-for cls_method in cls_methods:
-    if cls_method == "rf":
-            cls_kwargs = {"n_estimators":500, "random_state":22}
-    else:
-        cls_kwargs = {"random_state":22}
+for text_transformer_type in text_transformer_types:
+    if text_transformer_type is not None:
+        optimal_params = pd.read_csv("cv_results/optimal_params_%s"%out_filename_bases[text_transformer_type], sep=";")
+        
+    for cls_method in cls_methods:
+        if cls_method == "rf":
+                cls_kwargs = {"n_estimators":500, "random_state":22}
+        else:
+            cls_kwargs = {"random_state":22}
     
-    optimal_params = pd.read_csv("cv_results/optimal_params_%s"%cls_method, sep=";")
-        
-    for text_transformer_type in text_transformer_types:
-        
         for conf in confidences:
-        
+            if text_transformer_type is not None:
+                optimal_params_row = optimal_params.loc[(optimal_params["confidence"] == conf) & 
+                                                        (optimal_params["cls"] == cls_method)]
+            
             if text_transformer_type is None:
                 transformer_kwargs = None
                 dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances",
                                 "bilanss_client"]
                 last_state_cols = []
             elif text_transformer_type == "LDATransformer":
-                k = int(optimal_params[optimal_params.confidence==conf].topic_k)
-                tfidf = (optimal_params[optimal_params.confidence==conf].topic_tfidf == "tfidf").iloc[0]
-                transformer_kwargs = {"num_topics":k, "tfidf":tfidf, random_seed:22}
+                k = int(optimal_params_row.k)
+                tfidf = (optimal_params_row.tfidf == "tfidf").iloc[0]
+                transformer_kwargs = {"num_topics":k, "tfidf":tfidf, "random_seed":22}
                 dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances",
                                 "bilanss_client", "event_description_lemmas"]
                 last_state_cols = []
             elif text_transformer_type == "PVTransformer":
-                size = int(optimal_params[optimal_params.confidence==conf].doc2vec_size)
-                window = int(optimal_params[optimal_params.confidence==conf].doc2vec_window)
-                transformer_kwargs = {"size":size, "window":window, random_seed:22, epochs:10}
+                size = int(optimal_params_row.size)
+                window = int(optimal_params_row.window)
+                transformer_kwargs = {"size":size, "window":window, "random_seed":22, "epochs":10}
                 dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances",
                                 "bilanss_client", "event_description_lemmas"]
                 last_state_cols = []
             elif text_transformer_type == "BoNGTransformer":
-                ngram_max = int(optimal_params[optimal_params.confidence==conf].bow_ngram)
-                nr_selected = int(optimal_params[optimal_params.confidence==conf].bow_selected)
-                tfidf = (optimal_params[optimal_params.confidence==conf].bow_tfidf == "tfidf").iloc[0]
+                ngram_max = int(optimal_params_row.ngram)
+                nr_selected = int(optimal_params_row.selected)
+                tfidf = (optimal_params_row.tfidf == "tfidf").iloc[0]
                 transformer_kwargs = {"ngram_max":ngram_max, "tfidf":tfidf, "nr_selected":nr_selected}
                 dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances",
                                 "bilanss_client"]
                 last_state_cols = ["event_description_lemmas"]
             elif text_transformer_type == "NBLogCountRatioTransformer":
-                ngram_max = int(optimal_params[optimal_params.confidence==conf].nb_ngram)
-                nr_selected = int(optimal_params[optimal_params.confidence==conf].nb_selected)
-                alpha = float(optimal_params[optimal_params.confidence==conf].nb_alpha)
+                ngram_max = int(optimal_params_row.ngram)
+                nr_selected = int(optimal_params_row.selected)
+                alpha = float(optimal_params_row.alpha)
                 transformer_kwargs = {"ngram_max":ngram_max, "alpha":alpha, "nr_selected":nr_selected}
                 dynamic_cols = ["debt_sum", "max_days_due", "exp_payment", "tax_declar", "month", "tax_debt", "debt_balances",
                                 "bilanss_client"]
