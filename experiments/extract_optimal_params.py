@@ -27,7 +27,7 @@ for file in files:
         m = re.match("part(\d+)", parts[nextidx+2])
         part = m.group(1)
         
-        metrics = pd.read_csv("experiments/cv_results/%s"%file, sep=";")
+        metrics = pd.read_csv("cv_results/%s"%file, sep=";")
         metrics["selected"] = selected
         metrics["tfidf"] = tfidf
         metrics["ngram"] = ngram
@@ -47,7 +47,7 @@ for file in files:
         m = re.match("part(\d+)", parts[5])
         part = m.group(1)
         
-        metrics = pd.read_csv("experiments/cv_results/%s"%file, sep=";")
+        metrics = pd.read_csv("cv_results/%s"%file, sep=";")
         metrics["selected"] = selected
         metrics["alpha"] = alpha
         metrics["ngram"] = ngram
@@ -68,7 +68,7 @@ for file in files:
         m = re.match("part(\d+)", parts[nextidx+1])
         part = m.group(1)
         
-        metrics = pd.read_csv("experiments/cv_results/%s"%file, sep=";")
+        metrics = pd.read_csv("cv_results/%s"%file, sep=";")
         metrics["k"] = k
         metrics["tfidf"] = tfidf
         
@@ -84,7 +84,7 @@ for file in files:
         m = re.match("part(\d+)", parts[4])
         part = m.group(1)
         
-        metrics = pd.read_csv("experiments/cv_results/%s"%file, sep=";")
+        metrics = pd.read_csv("cv_results/%s"%file, sep=";")
         metrics["size"] = size
         metrics["window"] = window
     else:
