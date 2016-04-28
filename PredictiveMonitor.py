@@ -112,9 +112,8 @@ class PredictiveMonitor():
         
         
     def _evaluate(self, dt_test, results):
-        
-        dt_test = dt_test[dt_test[self.event_nr_col] == 1]
         case_lengths = dt_test[self.case_id_col].value_counts()
+        dt_test = dt_test[dt_test[self.event_nr_col] == 1]
         N = len(dt_test)
 
         tp = 0
@@ -126,8 +125,7 @@ class PredictiveMonitor():
         for result in results:
             if result["prediction"] == result["class"]:
                 tp += 1
-            if case_lengths is not None:
-                earliness += 1.0 * result["nr_events"] / case_lengths[result["case_name"]]
+            earliness += 1.0 * result["nr_events"] / case_lengths[result["case_name"]]
 
         fp = len(results) - tp
         
