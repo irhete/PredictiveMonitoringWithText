@@ -47,6 +47,8 @@ class PredictiveModel():
         
         if self.transformer is not None:
             text_cols = [col for col in train_X.columns.values if col.startswith(self.text_col)]
+            for col in text_cols:
+                train_X[col] = train_X[col].astype('str')
             train_text = self.transformer.fit_transform(train_X[text_cols], train_y)
             train_X = pd.concat([train_X.drop(text_cols, axis=1), train_text], axis=1)
         self.train_X = train_X
@@ -67,6 +69,8 @@ class PredictiveModel():
         
         if self.transformer is not None:
             text_cols = [col for col in test_X.columns.values if col.startswith(self.text_col)]
+            for col in text_cols:
+                test_encoded[col] = test_encoded[col].astype('str')
             test_text = self.transformer.transform(test_encoded[text_cols])
             test_X = pd.concat([test_X.drop(text_cols, axis=1), test_text], axis=1)
         
