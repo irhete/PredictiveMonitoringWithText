@@ -80,7 +80,12 @@ class SequenceEncoder():
         
         # fill NA
         if self.fillna:
-            data_final = data_final.fillna(0)
+            for col in data_final:
+                dt = data_final[col].dtype 
+                if dt == int or dt == float:
+                    data_final[col].fillna(0, inplace=True)
+                else:
+                    data_final[col].fillna("", inplace=True)
             
         return data_final
     

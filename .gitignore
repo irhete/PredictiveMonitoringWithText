@@ -60,3 +60,8 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+# Other
+experiments/cv_results
+experiments/final_results
+Predictive_monitoring.ipynb
