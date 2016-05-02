@@ -40,14 +40,14 @@ class PredictiveMonitor():
             self.models[nr_events] = pred_model
     
     
-    def test(self, dt_test, confidences=[0.6], evaluate=True, output_filename=None, outfile_mode='w', performance_output_filename=None):
+    def test(self, dt_test, confidences=[0.6], two_sided=False, evaluate=True, output_filename=None, outfile_mode='w', performance_output_filename=None):
         
         for confidence in confidences:
-            results = self._test_single_conf(dt_test, confidence)
+            results = self._test_single_conf(dt_test, confidence, two_sided)
             self.predictions[confidence] = results
             
             if evaluate:
-                evaluation = self._evaluate(dt_test, results)
+                evaluation = self._evaluate(dt_test, results, two_sided)
                 self.evaluations[confidence] = evaluation
                 
         if output_filename is not None:
@@ -68,7 +68,7 @@ class PredictiveMonitor():
                         fout.write("%s;%s;%s;%s;%s;%s\n"%(nr_events, pred_model.preproc_time, pred_model.cls_time, pred_model.test_preproc_time, pred_model.test_time, pred_model.nr_test_cases))
                 
     
-    def _test_single_conf(self, dt_test, confidence):
+    def _test_single_conf(self, dt_test, confidence, two_sided):
 
         results = []
         case_names_unprocessed = set(dt_test[self.case_id_col].unique())
@@ -94,44 +94,52 @@ class PredictiveMonitor():
             predictions_proba = pred_model.predict_proba(dt_test)
 
             # filter predictions with sufficient confidence
-            pos_col_idx = np.where(pred_model.cls.classes_ == self.pos_label)[0]
-            if len(pos_col_idx) > 0:
-                pos_col_idx = pos_col_idx[0]
-                finished_idxs = np.where(predictions_proba[:,pos_col_idx] >= confidence)
-                finished_cases = pred_model.test_case_names.iloc[finished_idxs]
-                for idx in finished_idxs[0]:
-                    results.append({"case_name":pred_model.test_case_names.iloc[idx], 
-                                             "prediction":self.pos_label,
-                                             "class":pred_model.test_y.iloc[idx],
-                                             "nr_events":nr_events})
-                case_names_unprocessed = case_names_unprocessed.difference(set(finished_cases))
-            
+            for label_col_idx, label in enumerate(pred_model.cls.classes_):
+                if label == self.pos_label or two_sided:
+                    finished_idxs = np.where(predictions_proba[:,label_col_idx] >= confidence)
+                    finished_cases = pred_model.test_case_names.iloc[finished_idxs]
+                    for idx in finished_idxs[0]:
+                        results.append({"case_name":pred_model.test_case_names.iloc[idx], 
+                                        "prediction":label,
+                                        "class":pred_model.test_y.iloc[idx],
+                                        "nr_events":nr_events})
+                        case_names_unprocessed = case_names_unprocessed.difference(set(finished_cases))
+                
             nr_events += 1
         
         return(results)
         
         
-    def _evaluate(self, dt_test, results):
+    def _evaluate(self, dt_test, results, two_sided):
         case_lengths = dt_test[self.case_id_col].value_counts()
         dt_test = dt_test[dt_test[self.event_nr_col] == 1]
         N = len(dt_test)
 
         tp = 0
+        fp = 0
+        tn = 0
+        fn = 0
         earliness = 0
         finished_case_names = [result["case_name"] for result in results]
         positives = sum(dt_test[self.label_col] == self.pos_label)
         negatives = sum(dt_test[self.label_col] != self.pos_label)
 
+        
         for result in results:
-            if result["prediction"] == result["class"]:
+            if result["prediction"] == self.pos_label and result["class"] == self.pos_label:
                 tp += 1
+            elif result["prediction"] == self.pos_label and result["class"] != self.pos_label:
+                fp += 1
+            elif result["prediction"] != self.pos_label and result["class"] != self.pos_label:
+                tn += 1
+            else:
+                fn += 1
             earliness += 1.0 * result["nr_events"] / case_lengths[result["case_name"]]
 
-        fp = len(results) - tp
-        
-        dt_test = dt_test[~dt_test[self.case_id_col].isin(finished_case_names)] # predicted as negatives
-        tn = sum(dt_test[self.label_col] != self.pos_label)
-        fn = len(dt_test) - tn
+        if not two_sided:
+            dt_test = dt_test[~dt_test[self.case_id_col].isin(finished_case_names)] # predicted as negatives
+            tn = sum(dt_test[self.label_col] != self.pos_label)
+            fn = len(dt_test) - tn
 
         metrics = {}
 
@@ -150,6 +158,6 @@ class PredictiveMonitor():
         metrics["fn"] = fn
         metrics["fp"] = fp
         metrics["tn"] = tn
-        metrics["failure_rate"] = 1 - 1.0 * len(results) / N  # i.e. predicted as negatives
+        metrics["failure_rate"] = 1 - 1.0 * len(results) / N
         
         return(metrics)
