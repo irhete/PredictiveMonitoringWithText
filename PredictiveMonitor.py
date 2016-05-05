@@ -144,12 +144,13 @@ class PredictiveMonitor():
         metrics = {}
 
         metrics["recall"] = 1.0 * tp / positives # alternative without failures: (tp+fn)
-        metrics["accuracy"] = 1.0 * (tp+tn) / (tp+tn+fp+fn)
         if len(results) > 0:
+            metrics["accuracy"] = 1.0 * (tp+tn) / (tp+tn+fp+fn)
             metrics["precision"] = 1.0 * tp / (tp+fp)
             metrics["earliness"] = earliness / len(results)
             metrics["fscore"] = 2 * metrics["precision"] * metrics["recall"] / (metrics["precision"] + metrics["recall"])
         else:
+            metrics["accuracy"] = 0
             metrics["precision"] = 0
             metrics["earliness"] = 0
             metrics["fscore"] = 0
