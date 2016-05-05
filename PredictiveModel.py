@@ -37,6 +37,8 @@ class PredictiveModel():
         else:
             print("Classifier method not known")
         
+        self.hardcoded_prediction = None
+        
 
     def fit(self, dt_train):
         preproc_start_time = time.time()
@@ -56,7 +58,10 @@ class PredictiveModel():
         self.preproc_time = preproc_end_time - preproc_start_time
         
         cls_start_time = time.time()
-        self.cls.fit(train_X, train_y)
+        if len(train_y.unique()) < 2: # less than 2 classes are present
+            self.hardcoded_prediction = train_y[0]
+        else:
+            self.cls.fit(train_X, train_y)
         cls_end_time = time.time()
         self.cls_time = cls_end_time - cls_start_time
 
@@ -66,6 +71,9 @@ class PredictiveModel():
         test_encoded = self.encoder.transform(dt_test)
         
         test_X = test_encoded.drop([self.case_id_col, self.label_col], axis=1)
+        
+        if self.hardcoded_prediction is not None: # e.g. model was trained with one class only
+            return [self.hardcoded_prediction] * test_X.shape[0]
         
         if self.transformer is not None:
             text_cols = [col for col in test_X.columns.values if col.startswith(self.text_col)]
