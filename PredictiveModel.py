@@ -60,6 +60,7 @@ class PredictiveModel():
         cls_start_time = time.time()
         if len(train_y.unique()) < 2: # less than 2 classes are present
             self.hardcoded_prediction = train_y[0]
+            self.cls.classes_ = train_y.unique()
         else:
             self.cls.fit(train_X, train_y)
         cls_end_time = time.time()
