@@ -74,9 +74,6 @@ class PredictiveModel():
         
         test_X = test_encoded.drop([self.case_id_col, self.label_col], axis=1)
         
-        if self.hardcoded_prediction is not None: # e.g. model was trained with one class only
-            return np.array([1.0,0.0]*test_X.shape[0]).reshape(test_X.shape[0],2)
-        
         if self.transformer is not None:
             text_cols = [col for col in test_X.columns.values if col.startswith(self.text_col)]
             for col in text_cols:
@@ -91,7 +88,10 @@ class PredictiveModel():
         self.test_preproc_time = test_preproc_end_time - test_preproc_start_time
         
         test_start_time = time.time()
-        predictions_proba = self.cls.predict_proba(test_X)
+        if self.hardcoded_prediction is not None: # e.g. model was trained with one class only
+            predictions_proba = np.array([1.0,0.0]*test_X.shape[0]).reshape(test_X.shape[0],2)
+        else:
+            predictions_proba = self.cls.predict_proba(test_X)
         test_end_time = time.time()
         self.test_time = test_end_time - test_start_time
         self.nr_test_cases = len(predictions_proba)
