@@ -74,7 +74,7 @@ class PredictiveModel():
         test_X = test_encoded.drop([self.case_id_col, self.label_col], axis=1)
         
         if self.hardcoded_prediction is not None: # e.g. model was trained with one class only
-            return [self.hardcoded_prediction] * test_X.shape[0]
+            return np.array([1.0,0.0]*test_X.shape[0]).reshape(test_X.shape[0],2)
         
         if self.transformer is not None:
             text_cols = [col for col in test_X.columns.values if col.startswith(self.text_col)]
