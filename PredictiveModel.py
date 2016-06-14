@@ -39,14 +39,18 @@ class PredictiveModel():
             print("Classifier method not known")
         
         self.hardcoded_prediction = None
+        self.test_encode_time = None
+        self.test_preproc_time = None
+        self.test_time = None
+        self.nr_test_cases = None
         
 
     def fit(self, dt_train):
         preproc_start_time = time.time()
         train_encoded = self.encoder.fit_transform(dt_train)
-        
         train_X = train_encoded.drop([self.case_id_col, self.label_col], axis=1)
         train_y = train_encoded[self.label_col]
+        
         
         if self.transformer is not None:
             text_cols = [col for col in train_X.columns.values if col.startswith(self.text_col)]
@@ -60,7 +64,7 @@ class PredictiveModel():
         
         cls_start_time = time.time()
         if len(train_y.unique()) < 2: # less than 2 classes are present
-            self.hardcoded_prediction = train_y[0]
+            self.hardcoded_prediction = train_y.iloc[0]
             self.cls.classes_ = train_y.unique()
         else:
             self.cls.fit(train_X, train_y)
@@ -69,9 +73,12 @@ class PredictiveModel():
 
         
     def predict_proba(self, dt_test):
-        test_preproc_start_time = time.time()
+        encode_start_time = time.time()
         test_encoded = self.encoder.transform(dt_test)
+        encode_end_time = time.time()
+        self.test_encode_time = encode_end_time - encode_start_time
         
+        test_preproc_start_time = time.time()
         test_X = test_encoded.drop([self.case_id_col, self.label_col], axis=1)
         
         if self.transformer is not None:
@@ -80,6 +87,7 @@ class PredictiveModel():
                 test_encoded[col] = test_encoded[col].astype('str')
             test_text = self.transformer.transform(test_encoded[text_cols])
             test_X = pd.concat([test_X.drop(text_cols, axis=1), test_text], axis=1)
+        
         
         self.test_case_names = test_encoded[self.case_id_col]
         self.test_X = test_X

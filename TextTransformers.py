@@ -232,8 +232,17 @@ class NBLogCountRatioTransformer(TransformerMixin):
         bong = bong.toarray()
         
         # calculate nb ratios
-        pos_bong = bong[y == self.pos_label]
-        neg_bong = bong[y != self.pos_label]
+        pos_label_idxs = y == self.pos_label
+        if sum(pos_label_idxs) > 0:
+            if len(y) - sum(pos_label_idxs) > 0:
+                pos_bong = bong[pos_label_idxs]
+                neg_bong = bong[~pos_label_idxs]
+            else:
+                neg_bong = np.array([])
+                pos_bong = bong.copy()
+        else:
+            neg_bong = bong.copy()
+            pos_bong = np.array([])
         p = 1.0 * pos_bong.sum(axis=0) + self.alpha
         q = 1.0 * neg_bong.sum(axis=0) + self.alpha
         r = np.log((p / p.sum()) / (q / q.sum()))

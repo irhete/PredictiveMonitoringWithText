@@ -29,6 +29,7 @@ class PredictiveMonitor():
     def train(self, dt_train, max_events=None):
         
         max_events = max(dt_train[self.event_nr_col]) if max_events==None else max_events
+        self.max_events = max_events
         for nr_events in range(1, max_events+1):
             
             pred_model = PredictiveModel(nr_events=nr_events, case_id_col=self.case_id_col, label_col=self.label_col, 
@@ -63,9 +64,9 @@ class PredictiveMonitor():
                         
         if performance_output_filename is not None:
              with open(performance_output_filename, 'w') as fout:
-                    fout.write("nr_events;train_preproc_time;train_cls_time;test_preproc_time;test_time;nr_test_cases\n")
+                    fout.write("nr_events;train_preproc_time;train_cls_time;test_encode_time;test_preproc_time;test_time;nr_test_cases\n")
                     for nr_events, pred_model in self.models.items():
-                        fout.write("%s;%s;%s;%s;%s;%s\n"%(nr_events, pred_model.preproc_time, pred_model.cls_time, pred_model.test_preproc_time, pred_model.test_time, pred_model.nr_test_cases))
+                        fout.write("%s;%s;%s;%s;%s;%s;%s\n"%(nr_events, pred_model.preproc_time, pred_model.cls_time, pred_model.test_encode_time, pred_model.test_preproc_time, pred_model.test_time, pred_model.nr_test_cases))
                 
     
     def _test_single_conf(self, dt_test, confidence, two_sided):
@@ -111,8 +112,8 @@ class PredictiveMonitor():
         
         
     def _evaluate(self, dt_test, results, two_sided):
-        case_lengths = dt_test[self.case_id_col].value_counts()
-        dt_test = dt_test[dt_test[self.event_nr_col] == 1]
+        #case_lengths = dt_test[self.case_id_col].value_counts()
+        #dt_test = dt_test[dt_test[self.event_nr_col] == 1]
         N = len(dt_test)
 
         tp = 0
@@ -134,7 +135,8 @@ class PredictiveMonitor():
                 tn += 1
             else:
                 fn += 1
-            earliness += 1.0 * result["nr_events"] / case_lengths[result["case_name"]]
+            #earliness += 1.0 * result["nr_events"] / case_lengths[result["case_name"]]
+            earliness += 1.0 * result["nr_events"] / min(int(dt_test[dt_test[self.case_id_col] == result["case_name"]]["case_length"]), self.max_events)
 
         if not two_sided:
             dt_test = dt_test[~dt_test[self.case_id_col].isin(finished_case_names)] # predicted as negatives
