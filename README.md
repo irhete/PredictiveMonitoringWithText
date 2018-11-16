@@ -1,6 +1,17 @@
-# PredictiveMonitoringWithText
-Scripts related to predictive business process monitoring framework with structured and unstructured (textual) data.
+This repository contains supplementary material for the article "[Predictive Business Process Monitoring with Structured and Unstructured Data](https://link.springer.com/chapter/10.1007/978-3-319-45348-4_23)" by [Irene Teinemaa](https://irhete.github.io/), [Marlon Dumas](http://kodu.ut.ee/~dumas/), [Fabrizio Maria Maggi](https://scholar.google.nl/citations?user=Jo9fNKEAAAAJ&hl=en&oi=sra), and [Chiara Di Francescomarino](https://shell-static.fbk.eu/people/dfmchiara/), which is published in the proceedings of the International Conference on Business Process Management 2016.
 
+## Reference
+If you use the code from this repository, please cite the original paper:
+```
+@inproceedings{teinemaa2016predictive,
+  title={Predictive Business Process Monitoring with Structured and Unstructured Data},
+  author={Teinemaa, Irene and Dumas, Marlon and Maggi, Fabrizio Maria and Di Francescomarino, Chiara},
+  booktitle={International Conference on Business Process Management},
+  pages={401--417},
+  year={2016},
+  organization={Springer}
+}
+```
 
 ## Dependencies
 
